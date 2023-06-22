@@ -65,6 +65,27 @@ void AppendVertex(Vertex vertex)
     vertexCount++;
 }
 
+void DrawCircle(Vector2F position, float radius, Color color, int segments = 50)
+{
+    int startIndex = vertexCount;
+
+    AppendVertex({{position.X, position.Y}, color});
+
+    for (int i = 0; i <= segments; i++)
+    {
+        float angle = (float)i / (float) segments * 2.f * 3.1415926f;
+
+        AppendVertex({{position.X + cosf(angle) * radius, position.Y + sinf(angle) * radius}, color});
+    }
+
+    for (int i = 0; i <= segments; i++)
+    {
+        indices[indexCount++] = startIndex;
+        indices[indexCount++] = startIndex + i + 1;
+        indices[indexCount++] = startIndex + i + 2;
+    }
+}
+
 void DrawRect(Vector2F position, Vector2F size, Color color)
 {
     int startIndex = vertexCount;
@@ -99,8 +120,7 @@ static void init()
 
     sg_setup(&desc);
 
-    DrawRect({0.5f, 0.5f}, {0.5f, 0.5f}, Color(0xFF0000FF));
-    DrawRect({-0.5f, -0.5f}, {0.2f, 0.2f}, Color(0xFF0000FF));
+    DrawCircle({0, 0}, 0.5f, Color(0xFF0000FF));
 
     sg_buffer_desc sgmDesc = {
         .data = {&vertexs, vertexCount * 7 * sizeof(*vertexs)},
@@ -164,7 +184,7 @@ sapp_desc sokol_main(int argc, char* argv[])
             .frame_cb = frame,
             .cleanup_cb = cleanup,
             .width = 640,
-            .height = 480,
+            .height = 640,
             .window_title = "Triangle (sokol-app)",
             .logger.func = slog_func,
             //.win32_console_create = true
