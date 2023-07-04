@@ -8,6 +8,8 @@
 #include "sokol_glue.h"
 #include "basic-sapp.glsl.h"
 
+#include "Input.h"
+
 static struct {
 	sg_pipeline pip;
 	sg_bindings bind;
@@ -39,7 +41,7 @@ void Clear()
 static void init()
 {
 	sg_desc desc = (sg_desc){
-		.logger = { .func = slog_func},
+		.logger = { .func = slog_func },
 		.context = sapp_sgcontext()
 	};
 	sg_setup(desc);
@@ -93,6 +95,7 @@ void frame()
 	// Clear buffers
 	Clear();
 
+	Input::Update();
 	frameCount++;
 	OnFrame();
 
@@ -118,11 +121,11 @@ sapp_desc sokol_main(int argc, char* argv[])
 		.init_cb = init,
 		.frame_cb = frame,
 		.cleanup_cb = cleanup,
+		.event_cb = Input::OnInput,
 		.width = 640,
 		.height = 640,
-		.window_title = "Triangle (sokol-app)",
-		.icon.sokol_default = true,
-		.logger.func = slog_func,
+		.window_title = "Game",
+		.logger = { .func = slog_func },
 		//.win32_console_create = true // Use it if you want to see console output
 	};
 }
@@ -136,13 +139,33 @@ namespace Window
 		return frameCount;
 	}
 
+	Vector2F ToScreenSpace(Vector2F position)
+	{
+		auto width = (float) sapp_width();
+		auto height = (float) sapp_height();
+
+		return {position.X / width * 2 - 1, position.Y / height * 2 - 1};
+	}
+
+	Vector2F ToWorldSpace(Vector2F position)
+	{
+		auto width = (float) sapp_width();
+		auto height = (float) sapp_height();
+
+		return {(position.X + 1) / 2 * width, (position.Y + 1) / 2 * height};
+	}
+
+	Vector2F ConvertInputPosition(Vector2F position)
+	{
+		return {position.X, sapp_height() - position.Y};
+	}
+
 	void AppendVertex(Vertex vertex)
 	{
-		int width = sapp_width();
-		int height = sapp_height();
+		auto position = ToScreenSpace(vertex.Position);
 
-		vertexes[vertexesUsed * 7] = (vertex.Position.X / width) * 2 - 1;
-		vertexes[vertexesUsed * 7 + 1] = (vertex.Position.Y / height) * 2 - 1;
+		vertexes[vertexesUsed * 7] = position.X;
+		vertexes[vertexesUsed * 7 + 1] = position.Y;
 		vertexes[vertexesUsed * 7 + 2] = 0;
 		vertexes[vertexesUsed * 7 + 3] = vertex.Color.R;
 		vertexes[vertexesUsed * 7 + 4] = vertex.Color.G;

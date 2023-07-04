@@ -13,6 +13,10 @@ struct Vertex
 namespace Window
 {
 	int GetFrameCount();
+	Vector2F ToScreenSpace(Vector2F position);
+	Vector2F ToWorldSpace(Vector2F position);
+	Vector2F ConvertInputPosition(Vector2F position);
+
 	void AppendVertex(Vertex vertex);
 	void DrawCircle(Vector2F position, float radius, Color color, int segments = 50);
 	void DrawRect(Vector2F position, Vector2F size, Color color);
