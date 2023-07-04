@@ -34,7 +34,7 @@ struct Color
 
 struct Vertex
 {
-	Vector3F Position = {0, 0, 0};
+	Vector2F Position = {0, 0};
 	Color Color{ 1.f, 1.f, 1.f, 1.f };
 };
 

@@ -8,23 +8,25 @@
 #include "sokol_glue.h"
 #include "basic-sapp.glsl.h"
 
-// Definitions
-
 static struct {
 	sg_pipeline pip;
 	sg_bindings bind;
 	sg_pass_action pass_action;
 } state;
 
-float vertexes[1000];
+#pragma region Attributes
+
+float vertexes[10000];
 int vertexesUsed = 0;
 
-uint32_t indices[1000];
+uint32_t indices[10000];
 int indicesUsed = 0;
 
 int frameCount = 0;
 
-// Functions
+#pragma endregion
+
+#pragma region SokolFunctions
 
 void OnFrame();
 
@@ -88,7 +90,7 @@ void frame()
 	sg_apply_pipeline(state.pip);
 	sg_apply_bindings(&state.bind);
 
-	// clear draw.cpp buffers
+	// Clear buffers
 	Clear();
 
 	frameCount++;
@@ -125,6 +127,8 @@ sapp_desc sokol_main(int argc, char* argv[])
 	};
 }
 
+#pragma endregion
+
 namespace Window
 {
 	int GetFrameCount()
@@ -134,9 +138,12 @@ namespace Window
 
 	void AppendVertex(Vertex vertex)
 	{
-		vertexes[vertexesUsed * 7] = vertex.Position.X;
-		vertexes[vertexesUsed * 7 + 1] = vertex.Position.Y;
-		vertexes[vertexesUsed * 7 + 2] = vertex.Position.Z;
+		int width = sapp_width();
+		int height = sapp_height();
+
+		vertexes[vertexesUsed * 7] = (vertex.Position.X / width) * 2 - 1;
+		vertexes[vertexesUsed * 7 + 1] = (vertex.Position.Y / height) * 2 - 1;
+		vertexes[vertexesUsed * 7 + 2] = 0;
 		vertexes[vertexesUsed * 7 + 3] = vertex.Color.R;
 		vertexes[vertexesUsed * 7 + 4] = vertex.Color.G;
 		vertexes[vertexesUsed * 7 + 5] = vertex.Color.B;
