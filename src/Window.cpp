@@ -175,18 +175,41 @@ namespace Window
 
 	void DrawRect(Vector2F position, Vector2F size, Color color)
 	{
+		DrawCustomShape({
+			{position.X, position.Y},
+			{position.X + size.X, position.Y},
+			{position.X + size.X, position.Y + size.Y},
+			{position.X, position.Y + size.Y}
+		}, color);
+	}
+
+	void DrawLine(Vector2F start, Vector2F end, float thickness, Color color)
+	{
+		Vector2F direction = end - start;
+		Vector2F normal = direction.Normalized().Normal();
+
+		Vector2F start1 = start + normal * thickness / 2;
+		Vector2F start2 = start - normal * thickness / 2;
+		Vector2F end1 = end + normal * thickness / 2;
+		Vector2F end2 = end - normal * thickness / 2;
+
+		DrawCustomShape({start1, end1, end2, start2}, color);
+	}
+
+	void DrawCustomShape(std::vector<Vector2F> points, Color color)
+	{
 		int startIndex = vertexesUsed;
 
-		AppendVertex({{position.X, position.Y + size.Y}, color});
-		AppendVertex({{position.X + size.X, position.Y + size.Y}, color});
-		AppendVertex({{position.X + size.X, position.Y}, color});
-		AppendVertex({{position.X, position.Y}, color});
+		for (auto& point : points)
+		{
+			AppendVertex({{point.X, point.Y}, color});
+		}
 
-		indices[indicesUsed++] = startIndex;
-		indices[indicesUsed++] = startIndex + 1;
-		indices[indicesUsed++] = startIndex + 2;
-		indices[indicesUsed++] = startIndex + 3;
-		indices[indicesUsed++] = startIndex + 2;
-		indices[indicesUsed++] = startIndex + 0;
+		for (int i = 0; i < points.size() - 2; i++)
+		{
+			indices[indicesUsed++] = startIndex;
+			indices[indicesUsed++] = startIndex + i + 1;
+			indices[indicesUsed++] = startIndex + i + 2;
+		}
 	}
 }
