@@ -76,13 +76,14 @@ static void init()
 		.label = "triangle-indices",
 	});
 
-    Image snakeHead(IMAGE_PATH "snake_head.png");
+    //Image image(IMAGE_PATH "snake_head.png");
+    Image image(IMAGE_PATH "drag.png");
 
     state.bind.fs_images[SLOT_tex] = sg_make_image((sg_image_desc)
     {
-        .width = snakeHead.GetWidth(),
-        .height = snakeHead.GetHeight(),
-        .data = {.subimage = {{{ .ptr = snakeHead.GetBuffer(), .size = snakeHead.GetBufferSize() }}}},
+        .width = image.GetWidth(),
+        .height = image.GetHeight(),
+        .data = {.subimage = {{{ .ptr = image.GetBuffer(), .size = image.GetBufferSize() }}}},
         .label = "snakehead-image"
     });
 

@@ -61,18 +61,6 @@ Image::Image(const char* filename)
 	_originalBuffer = (uint8_t*) malloc(width * height * Channels);
 
 	memcpy(_buffer, pixels, width * height * Channels);
-
-	// Convert from RGBA to ARGB
-	for (int i = 0; i < width * height; i++)
-	{
-		const uint32_t r = pixels[i * 4 + 0];
-		const uint32_t g = pixels[i * 4 + 1];
-		const uint32_t b = pixels[i * 4 + 2];
-		const uint32_t a = pixels[i * 4 + 3];
-
-		_buffer[i] = (a << 24) | (r << 16) | (g << 8) | b;
-	}
-
 	memcpy(_originalBuffer, _buffer, width * height * Channels);
 
 	stbi_image_free(pixels);

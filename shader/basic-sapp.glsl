@@ -24,7 +24,10 @@ out vec4 frag_color;
 
 void main()
 {
-    frag_color = texture(tex, uv) * color;
+    // Get pixel color alpha
+    vec4 tex_color = texture(tex, uv) * color;
+
+    frag_color = tex_color;
 }
 
 #pragma sokol @end

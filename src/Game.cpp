@@ -14,4 +14,7 @@ void OnFrame()
 	Window::DrawLine({ 0, 0 }, mousePosition, 5, Color(0xFF00FFFF));
 
     Window::DrawRect({ 0, 0 }, { 100, 100 }, Color(0xFFFFFFFF));
+    Window::DrawRect({ 100, 100 }, { 100, 100 }, Color(0xFF0000FF));
+    Window::DrawRect({ 200, 200 }, { 100, 100 }, Color(0xFF00FF00));
+    Window::DrawRect({ 300, 300 }, { 100, 100 }, Color(0xFFFF0000));
 }
