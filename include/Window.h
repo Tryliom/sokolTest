@@ -8,6 +8,7 @@ struct Vertex
 {
 	Vector2F Position = {0, 0};
 	Color Color{ 1.f, 1.f, 1.f, 1.f };
+    float U = 0, V = 0;
 };
 
 namespace Window

@@ -8,7 +8,15 @@
 #include "sokol_glue.h"
 #include "basic-sapp.glsl.h"
 
+#ifdef __EMSCRIPTEN__
+#define IMAGE_PATH "assets/"
+#else
+#define IMAGE_PATH "../assets/"
+#endif
+
 #include "Input.h"
+#include "Image.h"
+#include "Logger.h"
 
 static struct {
 	sg_pipeline pip;
@@ -18,6 +26,8 @@ static struct {
 
 #pragma region Attributes
 
+const int VertexNbAttributes = 9;
+
 float vertexes[10000];
 int vertexesUsed = 0;
 
@@ -25,6 +35,13 @@ uint32_t indices[10000];
 int indicesUsed = 0;
 
 int frameCount = 0;
+
+Vector2F uvs[4] = {
+    {1, 1},
+    {0, 1},
+    {0, 0},
+    {1, 0}
+};
 
 #pragma endregion
 
@@ -59,8 +76,18 @@ static void init()
 		.label = "triangle-indices",
 	});
 
+    Image snakeHead(IMAGE_PATH "snake_head.png");
+
+    state.bind.fs_images[SLOT_tex] = sg_make_image((sg_image_desc)
+    {
+        .width = snakeHead.GetWidth(),
+        .height = snakeHead.GetHeight(),
+        .data = {.subimage = {{{ .ptr = snakeHead.GetBuffer(), .size = snakeHead.GetBufferSize() }}}},
+        .label = "snakehead-image"
+    });
+
 	// Create shader from code-generated sg_shader_desc
-	sg_shader shd = sg_make_shader(triangle_shader_desc(sg_query_backend()));
+	sg_shader shd = sg_make_shader(ui_shader_desc(sg_query_backend()));
 
 	// Create a pipeline object (default render states are fine for triangle)
 	sg_pipeline_desc pip_desc = {
@@ -71,7 +98,8 @@ static void init()
 			.attrs =
 			{
 				{ .format = SG_VERTEXFORMAT_FLOAT3 },
-				{ .format = SG_VERTEXFORMAT_FLOAT4 }
+				{ .format = SG_VERTEXFORMAT_FLOAT4 },
+                { .format = SG_VERTEXFORMAT_FLOAT2 }
 			}
 		},
 		.index_type = SG_INDEXTYPE_UINT32,
@@ -99,10 +127,10 @@ void frame()
 	frameCount++;
 	OnFrame();
 
-	sg_update_buffer(state.bind.vertex_buffers[0], (sg_range) { .ptr = vertexes, .size = vertexesUsed * 7 * sizeof(*vertexes) });
+	sg_update_buffer(state.bind.vertex_buffers[0], (sg_range) { .ptr = vertexes, .size = vertexesUsed * VertexNbAttributes * sizeof(*vertexes) });
 	sg_update_buffer(state.bind.index_buffer, (sg_range) { .ptr = indices, .size = indicesUsed * sizeof(*indices) });
 
-	sg_draw(0, vertexesUsed * 7, 1);
+	sg_draw(0, vertexesUsed * VertexNbAttributes, 1);
 	sg_end_pass();
 	sg_commit();
 }
@@ -163,14 +191,17 @@ namespace Window
 	void AppendVertex(Vertex vertex)
 	{
 		auto position = ToScreenSpace(vertex.Position);
+        int vertexIndex = vertexesUsed * VertexNbAttributes;
 
-		vertexes[vertexesUsed * 7] = position.X;
-		vertexes[vertexesUsed * 7 + 1] = position.Y;
-		vertexes[vertexesUsed * 7 + 2] = 0;
-		vertexes[vertexesUsed * 7 + 3] = vertex.Color.R;
-		vertexes[vertexesUsed * 7 + 4] = vertex.Color.G;
-		vertexes[vertexesUsed * 7 + 5] = vertex.Color.B;
-		vertexes[vertexesUsed * 7 + 6] = vertex.Color.A;
+		vertexes[vertexIndex] = position.X;
+		vertexes[vertexIndex + 1] = position.Y;
+		vertexes[vertexIndex + 2] = 0;
+		vertexes[vertexIndex + 3] = vertex.Color.R;
+		vertexes[vertexIndex + 4] = vertex.Color.G;
+		vertexes[vertexIndex + 5] = vertex.Color.B;
+		vertexes[vertexIndex + 6] = vertex.Color.A;
+        vertexes[vertexIndex + 7] = vertex.U;
+        vertexes[vertexIndex + 8] = vertex.V;
 
 		vertexesUsed++;
 	}
@@ -179,13 +210,14 @@ namespace Window
 	{
 		int startIndex = vertexesUsed;
 
-		AppendVertex({{position.X, position.Y}, color});
+		AppendVertex({{position.X, position.Y}, color, uvs[0].X, uvs[0].Y});
 
 		for (int i = 0; i <= segments; i++)
 		{
 			float angle = (float) i / (float) segments * 2.f * 3.1415926f;
+            auto index = (i % 3) + 1;
 
-			AppendVertex({{position.X + cosf(angle) * radius, position.Y + sinf(angle) * radius}, color});
+			AppendVertex({{position.X + cosf(angle) * radius, position.Y + sinf(angle) * radius}, color, uvs[index].X, uvs[index].Y});
 		}
 
 		for (int i = 0; i <= segments; i++)
@@ -225,7 +257,9 @@ namespace Window
 
 		for (auto& point : points)
 		{
-			AppendVertex({{point.X, point.Y}, color});
+            auto index = &point - &points[0];
+
+			AppendVertex({{point.X, point.Y}, color, uvs[index].X, uvs[index].Y});
 		}
 
 		for (int i = 0; i < points.size() - 2; i++)
