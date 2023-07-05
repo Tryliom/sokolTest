@@ -24,7 +24,14 @@ out vec4 frag_color;
 
 void main()
 {
-    frag_color = texture(tex, uv) * color;
+    if (uv == vec2(-1, -1))
+    {
+        frag_color = color;
+    }
+    else
+    {
+        frag_color = texture(tex, uv) * color;
+    }
 }
 
 #pragma sokol @end

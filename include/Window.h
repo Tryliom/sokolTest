@@ -11,6 +11,21 @@ struct Vertex
     float U = 0, V = 0;
 };
 
+struct Texture
+{
+    int X = 0;
+    int Y = 0;
+    int Width = 0;
+    int Height = 0;
+};
+
+enum class TextureName
+{
+    BottomLeft, Bottom, BottomRight,
+    CenterLeft, Center, CenterRight,
+    TopLeft, Top, TopRight
+};
+
 namespace Window
 {
 	int GetFrameCount();
@@ -23,4 +38,7 @@ namespace Window
 	void DrawRect(Vector2F position, Vector2F size, Color color);
 	void DrawLine(Vector2F start, Vector2F end, float thickness, Color color);
 	void DrawCustomShape(std::vector<Vector2F> points, Color color);
+
+    void DrawCustomShape(std::vector<Vector2F> points, Color color, std::vector<Vector2F> textures);
+    void DrawTexture(Vector2F position, Vector2F size, Color color, TextureName texture);
 };

@@ -35,12 +35,14 @@ uint32_t indices[10000];
 int indicesUsed = 0;
 
 int frameCount = 0;
+int textureWidth = 0;
+int textureHeight = 0;
 
-Vector2F uvs[4] = {
-    {1, 1},
-    {0, 1},
-    {0, 0},
-    {1, 0}
+// Texture 96x96
+Texture textures[9] = {
+    { 0, 0, 32, 32 }, { 32, 0, 32, 32 }, { 64, 0, 32, 32 },
+    { 0, 32, 32, 32 }, { 32, 32, 32, 32 }, { 64, 32, 32, 32 },
+    { 0, 64, 32, 32 }, { 32, 64, 32, 32 }, { 64, 64, 32, 32 }
 };
 
 #pragma endregion
@@ -77,14 +79,18 @@ static void init()
 	});
 
     //Image image(IMAGE_PATH "snake_head.png");
-    Image image(IMAGE_PATH "drag.png");
+    //Image image(IMAGE_PATH "drag.png");
+    Image image(IMAGE_PATH "walls.png");
+
+    textureWidth = image.GetWidth();
+    textureHeight = image.GetHeight();
 
     state.bind.fs_images[SLOT_tex] = sg_make_image((sg_image_desc)
     {
-        .width = image.GetWidth(),
-        .height = image.GetHeight(),
+        .width = textureWidth,
+        .height = textureHeight,
         .data = {.subimage = {{{ .ptr = image.GetBuffer(), .size = image.GetBufferSize() }}}},
-        .label = "snakehead-image"
+        .label = "walls-image"
     });
 
 	// Create shader from code-generated sg_shader_desc
@@ -226,14 +232,13 @@ namespace Window
 	{
 		int startIndex = vertexesUsed;
 
-		AppendVertex({{position.X, position.Y}, color, uvs[0].X, uvs[0].Y});
+		AppendVertex({{position.X, position.Y}, color, -1, -1});
 
 		for (int i = 0; i <= segments; i++)
 		{
 			float angle = (float) i / (float) segments * 2.f * 3.1415926f;
-            auto index = (i % 3) + 1;
 
-			AppendVertex({{position.X + cosf(angle) * radius, position.Y + sinf(angle) * radius}, color, uvs[index].X, uvs[index].Y});
+			AppendVertex({{position.X + cosf(angle) * radius, position.Y + sinf(angle) * radius}, color, -1, -1});
 		}
 
 		for (int i = 0; i <= segments; i++)
@@ -273,9 +278,7 @@ namespace Window
 
 		for (auto& point : points)
 		{
-            auto index = &point - &points[0];
-
-			AppendVertex({{point.X, point.Y}, color, uvs[index].X, uvs[index].Y});
+			AppendVertex({{point.X, point.Y}, color, -1, -1});
 		}
 
 		for (int i = 0; i < points.size() - 2; i++)
@@ -285,4 +288,41 @@ namespace Window
 			indices[indicesUsed++] = startIndex + i + 2;
 		}
 	}
+
+    void DrawCustomShape(std::vector<Vector2F> points, Color color, std::vector<Vector2F> textures)
+    {
+        int startIndex = vertexesUsed;
+
+        for (int i = 0; i < points.size(); i++)
+        {
+            AppendVertex({{points[i].X, points[i].Y}, color, textures[i].X, textures[i].Y});
+        }
+
+        for (int i = 0; i < points.size() - 2; i++)
+        {
+            indices[indicesUsed++] = startIndex;
+            indices[indicesUsed++] = startIndex + i + 1;
+            indices[indicesUsed++] = startIndex + i + 2;
+        }
+    }
+
+    void DrawTexture(Vector2F position, Vector2F size, Color color, TextureName texture)
+    {
+        float width = textures[static_cast<int>(texture)].Width / (float) textureWidth;
+        float height = textures[static_cast<int>(texture)].Height / (float) textureHeight;
+        float X = textures[static_cast<int>(texture)].X / (float) textureWidth;
+        float Y = textures[static_cast<int>(texture)].Y / (float) textureHeight;
+
+        DrawCustomShape({
+            {position.X, position.Y},
+            {position.X + size.X, position.Y},
+            {position.X + size.X, position.Y + size.Y},
+            {position.X, position.Y + size.Y}
+        }, color, {
+            {X, Y},
+            {X + width, Y},
+            {X + width, Y + height},
+            {X, Y + height}
+        });
+    }
 }
