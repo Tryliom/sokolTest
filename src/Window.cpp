@@ -103,8 +103,23 @@ static void init()
                 { .format = SG_VERTEXFORMAT_FLOAT2 }
 			}
 		},
-		.index_type = SG_INDEXTYPE_UINT32,
-		.label = "triangle-pipeline"
+        .colors =
+        {
+            {
+                // Set up the alpha blending
+                .blend = {
+                    .enabled = true,
+                    .src_factor_rgb = SG_BLENDFACTOR_SRC_ALPHA,
+                    .dst_factor_rgb = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+                    .op_rgb = SG_BLENDOP_ADD,
+                    .src_factor_alpha = SG_BLENDFACTOR_ONE,
+                    .dst_factor_alpha = SG_BLENDFACTOR_ONE_MINUS_SRC_ALPHA,
+                    .op_alpha = SG_BLENDOP_ADD
+                }
+            }
+        },
+        .index_type = SG_INDEXTYPE_UINT32,
+        .label = "triangle-pipeline",
 	};
 	state.pip = sg_make_pipeline(pip_desc);
 
