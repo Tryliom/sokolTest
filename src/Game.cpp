@@ -1,25 +1,64 @@
+#include <cmath>
+
 #include "Window.h"
 #include "Input.h"
+#include "sokol_app.h"
+
+DrawableObject movableObject = {
+    .Position = { 300, 300 },
+    .Pivot = { 0.5f, 0.5f },
+    .Shape = new RectangleShape(100, 100)
+};
+float speed = 3;
 
 void OnFrame()
 {
 	auto mousePosition = Input::GetMousePosition();
+    auto previousMousePosition = Input::GetPreviousMousePosition();
 
-	Window::DrawCircle({ 200, 200 }, 100, Color(0xFF0000FF));
-	Window::DrawCircle({ 600, 600 }, 50, Color(0xFFFF00FF));
-	Window::DrawRect({ 400, 100 }, { 50, 100 }, Color(0xFFFF00FF));
-
-	Window::DrawCustomShape({ { 300, 450 }, { 550, 400 }, { 600, 500 }, { 400, 550 } }, Color(0xFFFFFFFF));
-
-    //Window::DrawRect({ 0, 0 }, { 100, 100 }, Color(0xFFFFFFFF));
-    /*Window::DrawRect({ 100, 100 }, { 100, 100 }, Color(0xFF0000FF));
-    Window::DrawRect({ 200, 200 }, { 100, 100 }, Color(0xFF00FF00));
-    Window::DrawRect({ 300, 300 }, { 100, 100 }, Color(0xFFFF0000));*/
-
-    for (int i = 0; i < 9; i++)
+    if (Input::IsKeyHeld(SAPP_KEYCODE_A))
     {
-        Window::DrawTexture({ i * 50.f, 0 }, { 50, 50 }, Color(0xFFFFFFFF), (TextureName) i);
+        movableObject.Position.X -= speed;
+    }
+    if (Input::IsKeyHeld(SAPP_KEYCODE_D))
+    {
+        movableObject.Position.X += speed;
+    }
+    if (Input::IsKeyHeld(SAPP_KEYCODE_W))
+    {
+        movableObject.Position.Y += speed;
+    }
+    if (Input::IsKeyHeld(SAPP_KEYCODE_S))
+    {
+        movableObject.Position.Y -= speed;
     }
 
-    Window::DrawLine({ 0, 0 }, mousePosition, 5, Color(0xFFFFFF33));
+    if (Input::IsKeyHeld(SAPP_KEYCODE_Z))
+    {
+        Window::Zoom(0.01f);
+    }
+    if (Input::IsKeyHeld(SAPP_KEYCODE_X))
+    {
+        Window::Zoom(-0.01f);
+    }
+
+    if (Input::IsMouseButtonHeld(SAPP_MOUSEBUTTON_LEFT))
+    {
+        Window::MoveCamera(mousePosition - previousMousePosition);
+    }
+
+    auto frame = Window::GetFrameCount();
+    float scale = std::sin(frame / 100.f) * 0.5f + 0.5f;
+
+    Window::DrawObject(movableObject);
+
+    Window::DrawObject({
+           .Position = { 500, 500 },
+           .Pivot = { 0.5f, 0.5f },
+           .Scale = { scale, scale },
+           /*.Rotation = frame / 10.f,*/
+           .Shape = new RectangleShape(100, 100),
+           .UseTexture = true,
+           .TextureName = TextureName::BottomRight
+    });
 }

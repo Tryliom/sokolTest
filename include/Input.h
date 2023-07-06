@@ -49,4 +49,5 @@ namespace Input
 	bool IsMouseButtonHeld(int button);
 
 	Vector2F GetMousePosition();
+    Vector2F GetPreviousMousePosition();
 }

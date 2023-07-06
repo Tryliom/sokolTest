@@ -12,6 +12,8 @@ bool mouseButtons[SAPP_MAX_MOUSEBUTTONS + 1];
 bool previousMouseButtons[SAPP_MAX_MOUSEBUTTONS + 1];
 
 Vector2F mousePosition = { 0, 0 };
+Vector2F previousMousePosition = { 0, 0 };
+bool mouseMoved = false;
 
 namespace Input
 {
@@ -35,12 +37,20 @@ namespace Input
 		}
 		else if (event->type == SAPP_EVENTTYPE_MOUSE_MOVE)
 		{
+            previousMousePosition = Vector2F(mousePosition.X, mousePosition.Y);
 			mousePosition = Window::ConvertInputPosition({ event->mouse_x, event->mouse_y });
+            mouseMoved = true;
 		}
 	}
 
 	void Update()
 	{
+        if (!mouseMoved)
+        {
+            previousMousePosition = Vector2F(mousePosition.X, mousePosition.Y);
+        }
+
+        mouseMoved = false;
 		memcpy(previousKeys, keys, sizeof(keys));
 		memcpy(previousMouseButtons, mouseButtons, sizeof(mouseButtons));
 	}
@@ -79,4 +89,9 @@ namespace Input
 	{
 		return mousePosition;
 	}
+
+    Vector2F GetPreviousMousePosition()
+    {
+        return previousMousePosition;
+    }
 }

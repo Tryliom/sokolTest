@@ -54,6 +54,18 @@ struct Vector2F
 		return *this;
 	}
 
+	Vector2F operator*(Vector2F other) const
+	{
+		return {X * other.X, Y * other.Y};
+	}
+
+	Vector2F& operator*=(Vector2F other)
+	{
+		X *= other.X;
+		Y *= other.Y;
+		return *this;
+	}
+
 	bool operator==(Vector2F other) const
 	{
 		return X == other.X && Y == other.Y;

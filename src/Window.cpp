@@ -1,5 +1,7 @@
 #include "Window.h"
 
+#include <utility>
+
 #define SOKOL_IMPL
 #define SOKOL_GLCORE33
 #include "sokol_app.h"
@@ -44,6 +46,8 @@ Texture textures[9] = {
     { 0, 32, 32, 32 }, { 32, 32, 32, 32 }, { 64, 32, 32, 32 },
     { 0, 64, 32, 32 }, { 32, 64, 32, 32 }, { 64, 64, 32, 32 }
 };
+
+Camera camera;
 
 #pragma endregion
 
@@ -210,13 +214,37 @@ namespace Window
 		return {position.X, sapp_height() - position.Y};
 	}
 
+    std::vector<Vector2F> GetUvs(TextureName texture)
+    {
+        float width = textures[static_cast<int>(texture)].Width / (float) textureWidth;
+        float height = textures[static_cast<int>(texture)].Height / (float) textureHeight;
+        float X = textures[static_cast<int>(texture)].X / (float) textureWidth;
+        float Y = textures[static_cast<int>(texture)].Y / (float) textureHeight;
+
+        return {
+            {X, Y},
+            {X + width, Y},
+            {X + width, Y + height},
+            {X, Y + height}
+        };
+    }
+
+    Vector2F GetScaledPosition(Vector2F position, Vector2F pivot, Vector2F scale, Vector2F size)
+    {
+        auto scaledSize = size * scale;
+        auto scaledPivot = scaledSize * pivot;
+
+        return position - scaledPivot;
+    }
+
 	void AppendVertex(Vertex vertex)
 	{
 		auto position = ToScreenSpace(vertex.Position);
+        auto cameraOffset = ToScreenSpace(camera.Position);
         int vertexIndex = vertexesUsed * VertexNbAttributes;
 
-		vertexes[vertexIndex] = position.X;
-		vertexes[vertexIndex + 1] = position.Y;
+		vertexes[vertexIndex] = (position.X + cameraOffset.X) * camera.Zoom;
+		vertexes[vertexIndex + 1] = (position.Y + cameraOffset.Y) * camera.Zoom;
 		vertexes[vertexIndex + 2] = 0;
 		vertexes[vertexIndex + 3] = vertex.Color.R;
 		vertexes[vertexIndex + 4] = vertex.Color.G;
@@ -228,17 +256,23 @@ namespace Window
 		vertexesUsed++;
 	}
 
-	void DrawCircle(Vector2F position, float radius, Color color, int segments)
+	void DrawCircle(Vector2F position, float radius, Color color, int segments, std::vector<Vector2F> uvs)
 	{
+        if (uvs.empty())
+        {
+            uvs = {{ -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }};
+        }
+
 		int startIndex = vertexesUsed;
 
-		AppendVertex({{position.X, position.Y}, color, -1, -1});
+		AppendVertex({{position.X, position.Y}, color, uvs[0].X, uvs[0].Y});
 
 		for (int i = 0; i <= segments; i++)
 		{
 			float angle = (float) i / (float) segments * 2.f * 3.1415926f;
+            int uvIndex = (i % 3) + 1;
 
-			AppendVertex({{position.X + cosf(angle) * radius, position.Y + sinf(angle) * radius}, color, -1, -1});
+			AppendVertex({{position.X + cosf(angle) * radius, position.Y + sinf(angle) * radius}, color, uvs[uvIndex].X, uvs[uvIndex].Y});
 		}
 
 		for (int i = 0; i <= segments; i++)
@@ -249,18 +283,28 @@ namespace Window
 		}
 	}
 
-	void DrawRect(Vector2F position, Vector2F size, Color color)
+	void DrawRect(Vector2F position, Vector2F size, Color color, std::vector<Vector2F> uvs)
 	{
+        if (uvs.empty())
+        {
+            uvs = {{ -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }};
+        }
+
 		DrawCustomShape({
 			{position.X, position.Y},
 			{position.X + size.X, position.Y},
 			{position.X + size.X, position.Y + size.Y},
 			{position.X, position.Y + size.Y}
-		}, color);
+		}, color, std::move(uvs));
 	}
 
-	void DrawLine(Vector2F start, Vector2F end, float thickness, Color color)
+	void DrawLine(Vector2F start, Vector2F end, float thickness, Color color, std::vector<Vector2F> uvs)
 	{
+        if (uvs.empty())
+        {
+            uvs = {{ -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }};
+        }
+
 		Vector2F direction = end - start;
 		Vector2F normal = direction.Normalized().Normal();
 
@@ -269,33 +313,21 @@ namespace Window
 		Vector2F end1 = end + normal * thickness / 2;
 		Vector2F end2 = end - normal * thickness / 2;
 
-		DrawCustomShape({start1, end1, end2, start2}, color);
+		DrawCustomShape({start1, end1, end2, start2}, color, std::move(uvs));
 	}
 
-	void DrawCustomShape(std::vector<Vector2F> points, Color color)
+	void DrawCustomShape(std::vector<Vector2F> points, Color color, std::vector<Vector2F> uvs)
 	{
-		int startIndex = vertexesUsed;
+        if (uvs.empty())
+        {
+            uvs = {{ -1, -1 }, { -1, -1 }, { -1, -1 }, { -1, -1 }};
+        }
 
-		for (auto& point : points)
-		{
-			AppendVertex({{point.X, point.Y}, color, -1, -1});
-		}
-
-		for (int i = 0; i < points.size() - 2; i++)
-		{
-			indices[indicesUsed++] = startIndex;
-			indices[indicesUsed++] = startIndex + i + 1;
-			indices[indicesUsed++] = startIndex + i + 2;
-		}
-	}
-
-    void DrawCustomShape(std::vector<Vector2F> points, Color color, std::vector<Vector2F> textures)
-    {
         int startIndex = vertexesUsed;
 
         for (int i = 0; i < points.size(); i++)
         {
-            AppendVertex({{points[i].X, points[i].Y}, color, textures[i].X, textures[i].Y});
+            AppendVertex({{points[i].X, points[i].Y}, color, uvs[i % 4].X, uvs[i % 4].Y});
         }
 
         for (int i = 0; i < points.size() - 2; i++)
@@ -304,25 +336,73 @@ namespace Window
             indices[indicesUsed++] = startIndex + i + 1;
             indices[indicesUsed++] = startIndex + i + 2;
         }
+	}
+
+    void DrawObject(DrawableObject object)
+    {
+        std::vector<Vector2F> uvs = {};
+        Vector2F position = {0, 0};
+
+        if (object.UseTexture)
+        {
+            uvs = GetUvs(object.TextureName);
+        }
+
+        if (object.Shape->Type == ShapeType::CircleType)
+        {
+            auto* circle = static_cast<CircleShape*>(object.Shape);
+
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {circle->Radius, circle->Radius});
+
+            DrawCircle(position, circle->Radius * object.Scale.Length(), object.Color, 50, uvs);
+        }
+
+        if (object.Shape->Type == ShapeType::RectangleType)
+        {
+            auto* rect = static_cast<RectangleShape*>(object.Shape);
+
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {rect->Width, rect->Height});
+
+            DrawRect(position, Vector2F{rect->Width, rect->Height} * object.Scale, object.Color, uvs);
+        }
+
+        if (object.Shape->Type == ShapeType::LineType)
+        {
+            auto* line = static_cast<LineShape*>(object.Shape);
+
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {line->Length, line->Thickness});
+
+            DrawLine(position, object.Position + line->Direction * line->Length * object.Scale, line->Thickness * object.Scale.Length(), object.Color, uvs);
+        }
+
+        if (object.Shape->Type == ShapeType::CustomType)
+        {
+            auto* custom = static_cast<CustomShape*>(object.Shape);
+            auto positions = std::vector<Vector2F>();
+
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {0, 0});
+
+            for (auto point : custom->Points)
+            {
+                positions.push_back(position + point);
+            }
+
+            DrawCustomShape(positions, object.Color, uvs);
+        }
     }
 
-    void DrawTexture(Vector2F position, Vector2F size, Color color, TextureName texture)
+    void MoveCamera(Vector2F position)
     {
-        float width = textures[static_cast<int>(texture)].Width / (float) textureWidth;
-        float height = textures[static_cast<int>(texture)].Height / (float) textureHeight;
-        float X = textures[static_cast<int>(texture)].X / (float) textureWidth;
-        float Y = textures[static_cast<int>(texture)].Y / (float) textureHeight;
+        camera.Position += position;
+    }
 
-        DrawCustomShape({
-            {position.X, position.Y},
-            {position.X + size.X, position.Y},
-            {position.X + size.X, position.Y + size.Y},
-            {position.X, position.Y + size.Y}
-        }, color, {
-            {X, Y},
-            {X + width, Y},
-            {X + width, Y + height},
-            {X, Y + height}
-        });
+    void Zoom(float scale)
+    {
+        camera.Zoom += scale;
+
+        if (camera.Zoom < 0.f)
+        {
+            camera.Zoom = 0.f;
+        }
     }
 }
