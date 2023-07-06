@@ -48,15 +48,15 @@ void OnFrame()
     }
 
     auto frame = Window::GetFrameCount();
-    float scale = std::sin(frame / 100.f) * 0.5f + 0.5f;
+    float scale = std::sin(frame / 10.f) * 0.5f + 0.5f;
 
     Window::DrawObject(movableObject);
 
     Window::DrawObject({
            .Position = { 500, 500 },
            .Pivot = { 0.5f, 0.5f },
-           //.Scale = { scale, scale },
-           .Rotation = frame / 100.f,
+           .Scale = { scale, scale },
+           /*.Rotation = frame / 10.f,*/
            .Shape = new RectangleShape(100, 100),
            .UseTexture = true,
            .TextureName = TextureName::BottomRight
