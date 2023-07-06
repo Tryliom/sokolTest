@@ -26,7 +26,7 @@ namespace Window
 	Vector2F ToWorldSpace(Vector2F position);
 	Vector2F ConvertInputPosition(Vector2F position);
     std::vector<Vector2F> GetUvs(TextureName texture);
-    Vector2F GetScaledPosition(Vector2F position, Vector2F pivot, Vector2F scale, Vector2F size);
+    Vector2F GetScaledPosition(Vector2F position, Vector2F pivot, Vector2F scale, float rotationDegree, Vector2F size);
 
 	void AppendVertex(Vertex vertex);
 

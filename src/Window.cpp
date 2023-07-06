@@ -229,8 +229,14 @@ namespace Window
         };
     }
 
-    Vector2F GetScaledPosition(Vector2F position, Vector2F pivot, Vector2F scale, Vector2F size)
+    Vector2F GetScaledPosition(Vector2F position, Vector2F pivot, Vector2F scale, float rotationDegree, Vector2F size)
     {
+        //TODO: Implement rotation
+
+        // Pivot = 0 to 1
+        // Top left corner is 0, 0
+        // Bottom right corner is 1, 1
+        // Center is 0.5, 0.5
         auto scaledSize = size * scale;
         auto scaledPivot = scaledSize * pivot;
 
@@ -352,7 +358,7 @@ namespace Window
         {
             auto* circle = static_cast<CircleShape*>(object.Shape);
 
-            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {circle->Radius, circle->Radius});
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, object.Rotation, {circle->Radius, circle->Radius});
 
             DrawCircle(position, circle->Radius * object.Scale.Length(), object.Color, 50, uvs);
         }
@@ -361,7 +367,7 @@ namespace Window
         {
             auto* rect = static_cast<RectangleShape*>(object.Shape);
 
-            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {rect->Width, rect->Height});
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, object.Rotation, {rect->Width, rect->Height});
 
             DrawRect(position, Vector2F{rect->Width, rect->Height} * object.Scale, object.Color, uvs);
         }
@@ -370,7 +376,7 @@ namespace Window
         {
             auto* line = static_cast<LineShape*>(object.Shape);
 
-            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {line->Length, line->Thickness});
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, object.Rotation, {line->Length, line->Thickness});
 
             DrawLine(position, object.Position + line->Direction * line->Length * object.Scale, line->Thickness * object.Scale.Length(), object.Color, uvs);
         }
@@ -380,7 +386,7 @@ namespace Window
             auto* custom = static_cast<CustomShape*>(object.Shape);
             auto positions = std::vector<Vector2F>();
 
-            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, {0, 0});
+            position = GetScaledPosition(object.Position, object.Pivot, object.Scale, object.Rotation, {0, 0});
 
             for (auto point : custom->Points)
             {

@@ -55,8 +55,8 @@ void OnFrame()
     Window::DrawObject({
            .Position = { 500, 500 },
            .Pivot = { 0.5f, 0.5f },
-           .Scale = { scale, scale },
-           /*.Rotation = frame / 10.f,*/
+           //.Scale = { scale, scale },
+           .Rotation = frame / 100.f,
            .Shape = new RectangleShape(100, 100),
            .UseTexture = true,
            .TextureName = TextureName::BottomRight
